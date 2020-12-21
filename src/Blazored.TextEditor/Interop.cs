@@ -87,5 +87,26 @@ namespace Blazored.TextEditor
                 "QuillFunctions.insertQuillImage",
                 quillElement, imageURL);
         }
+
+        internal static ValueTask<object> RegisterQuillEvent(
+            IJSRuntime jsRuntime,
+            ElementReference quillElement,
+            object objRef,
+            string eventName)
+        {
+            return jsRuntime.InvokeAsync<object>(
+                "QuillFunctions.registerQuillEvent",
+                quillElement, objRef, eventName);
+        }
+
+        internal static ValueTask<object> UnregisterQuillEvent(
+            IJSRuntime jsRuntime,
+            ElementReference quillElement,
+            string eventName)
+        {
+            return jsRuntime.InvokeAsync<object>(
+                "QuillFunctions.unregisterQuillEvent",
+                quillElement, eventName);
+        }
     }
 }

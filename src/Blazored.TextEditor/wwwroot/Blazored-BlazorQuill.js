@@ -51,6 +51,19 @@
                     .retain(editorIndex)
                     .insert({ image: imageURL },
                         { alt: imageURL }));
+        },
+        registerQuillEvent: function (quillElement, dotnetHelper, eventName) {
+            if (!quillElement[`__quill_event_${eventName}`]) {
+                quillElement[`__quill_event_${eventName}`] = function () {
+                    dotnetHelper.invokeMethodAsync("QuillEventCallbackCaller", eventName, [...arguments])
+                }
+                quillElement.__quill.on(eventName, quillElement[`__quill_event_${eventName}`]);
+            }
+        },
+        unregisterQuillEvent: function (quillElement, eventName) {
+            if (quillElement[`__quill_event_${eventName}`]) {
+                quillElement.__quill.off(eventName, quillElement[`__quill_event_${eventName}`]);
+            }
         }
     };
 })();

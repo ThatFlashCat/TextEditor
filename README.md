@@ -62,6 +62,14 @@ Below is a list of all the options available on the Text Editor.
 - `Theme` (Optional - Default: `snow`) - Use `snow` to show the Toolbar on top of the editor, and `bubble` for inline editing.
 - `DebugLevel` (Optional - Default: `info`) - Determines the level of debug information returned to the web browser console window. Options are `error`, `warn`, `log`, or `info`.
 
+**Events**
+
+- `OnTextChange` (Optional) - Emitted when the contents of the editor have changed.
+- `OnSelectionChange` (Optional) - Emitted when a user or API causes the selection to change.
+- `OnEditorChange` (Optional) - Emitted when either `OnTextChange` or `OnSelectionChange` would be emitted.
+
+> For more informations about events, please check the [Quill JS documentation](https://quilljs.com/docs/api/#events).
+
 **Methods**
 
 - `GetText` - Gets the content of the editor as Text.

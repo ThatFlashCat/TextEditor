@@ -1,4 +1,5 @@
-﻿@inject IJSRuntime JSRuntime
+﻿@using Blazored.TextEditor.Events
+@inject IJSRuntime JSRuntime
 
 <div @ref="@ToolBar">
     @ToolbarContent
@@ -30,8 +31,58 @@
     public string DebugLevel { get; set; }
         = "info";
 
+    private EventCallback<TextChangeEventArgs> _onTextChange;
+
+    [Parameter]
+    public EventCallback<TextChangeEventArgs> OnTextChange
+    {
+        get => _onTextChange;
+        set
+        {
+            if (value.HasDelegate != _onEditorChange.HasDelegate)
+            {
+                RegisterQuillEventCallback("text-change", value.HasDelegate);
+            }
+            _onTextChange = value;
+        }
+    }
+
+    private EventCallback<SelectionChangeEventArgs> _onSelectionChange;
+
+    [Parameter]
+    public EventCallback<SelectionChangeEventArgs> OnSelectionChange
+    {
+        get => _onSelectionChange;
+        set
+        {
+            if (value.HasDelegate != _onEditorChange.HasDelegate)
+            {
+                RegisterQuillEventCallback("selection-change", value.HasDelegate);
+            }
+            _onSelectionChange = value;
+        }
+    }
+
+    private EventCallback<EditorChangeEventArgs> _onEditorChange;
+
+    [Parameter]
+    public EventCallback<EditorChangeEventArgs> OnEditorChange
+    {
+        get => _onEditorChange;
+        set
+        {
+            if (value.HasDelegate != _onEditorChange.HasDelegate)
+            {
+                RegisterQuillEventCallback("editor-change", value.HasDelegate);
+            }
+            _onEditorChange = value;
+        }
+    }
+
     private ElementReference QuillElement;
     private ElementReference ToolBar;
+    private QuillEventCallbackInvokeHelper QuillEventCallbackInvokeHelper;
+    private bool QuillCreated = false;
 
     protected override async Task
         OnAfterRenderAsync(bool firstRender)
@@ -46,6 +97,9 @@
                 Placeholder,
                 Theme,
                 DebugLevel);
+
+            QuillCreated = true;
+            RegisterQuillEvents();
         }
     }
 
@@ -94,4 +148,58 @@
             await Interop.EnableQuillEditor(
                 JSRuntime, QuillElement, mode);
     }
+
+    private Task OnQuillEvent(string eventName, object[] arguments)
+    {
+        switch (eventName)
+        {
+            case "text-change":
+                return OnTextChange.HasDelegate ? OnTextChange.InvokeAsync(new TextChangeEventArgs(arguments)) : Task.CompletedTask;
+            case "selection-change":
+                return OnSelectionChange.HasDelegate ? OnSelectionChange.InvokeAsync(new SelectionChangeEventArgs(arguments)) : Task.CompletedTask;
+            case "editor-change":
+                return OnEditorChange.HasDelegate ? OnEditorChange.InvokeAsync(new EditorChangeEventArgs(arguments)) : Task.CompletedTask;
+        }
+        return Task.CompletedTask;
+    }
+
+    private void RegisterQuillEvents()
+    {
+        QuillEventCallbackInvokeHelper = new QuillEventCallbackInvokeHelper(OnQuillEvent);
+
+        if (OnTextChange.HasDelegate)
+        {
+            RegisterQuillEventCallback("text-change", OnTextChange.HasDelegate);
+        }
+
+        if (OnSelectionChange.HasDelegate)
+        {
+            RegisterQuillEventCallback("selection-change", OnSelectionChange.HasDelegate);
+        }
+
+        if (OnEditorChange.HasDelegate)
+        {
+            RegisterQuillEventCallback("editor-change", OnEditorChange.HasDelegate);
+        }
+    }
+
+    private void RegisterQuillEventCallback(string eventName, bool hasDelegate)
+    {
+        if (!QuillCreated)
+        {
+            return;
+        }
+
+        if (hasDelegate)
+        {
+            var objRef = DotNetObjectReference.Create(QuillEventCallbackInvokeHelper);
+
+            Interop.RegisterQuillEvent(JSRuntime, QuillElement, objRef, eventName);
+        }
+        else
+        {
+            Interop.UnregisterQuillEvent(JSRuntime, QuillElement, eventName);
+        }
+    }
+
 }
